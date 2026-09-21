@@ -13,7 +13,7 @@ import {
   type CompletionStatus,
 } from "@/lib/attempts";
 
-const LIMITS = [120, 300, 600] as const;
+const LIMITS = [120, 300, 600, 1200, 1800] as const;
 const CATEGORIES = ["All", "Design", "Improvement", "Metrics", "Execution", "Leadership", "Strategy"] as const;
 type Limit = (typeof LIMITS)[number];
 type View = "practice" | "bank" | "history";
@@ -192,7 +192,7 @@ export default function Home() {
                 {phase === "ready" && (
                   <div className="control-deck mt-10 pt-7">
                     <p className="arcade-kicker text-[#ff4fd8]">SELECT TARGET</p>
-                    <p className="mt-3 text-sm text-[#bec2d5]">The stopwatch keeps running after the target—no hard cutoff.</p>
+                    <p className="mt-3 text-sm text-[#bec2d5]">Choose a quick prompt or a full case-style answer. The stopwatch keeps running after the target—no hard cutoff.</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {LIMITS.map((seconds) => (
                         <button key={seconds} onClick={() => setLimit(seconds)} className={`target-chip ${limit === seconds ? "is-selected" : ""}`}>
@@ -236,17 +236,25 @@ export default function Home() {
         )}
 
         {view === "bank" && (
-          <section className="py-9">
-            <div className="flex flex-wrap gap-2">
+          <section className="arcade-screen py-9 sm:py-12">
+            <div className="screen-heading">
+              <p className="arcade-kicker text-[#ff4fd8]">CHOOSE YOUR CHALLENGE</p>
+              <h2>CHALLENGE SELECT</h2>
+              <p>Pick a category, then load a question into the studio.</p>
+            </div>
+            <div className="category-console mt-8 flex flex-wrap gap-2" aria-label="Question categories">
               {CATEGORIES.map((item) => (
-                <button key={item} onClick={() => setCategory(item)} className={`rounded-full px-4 py-2 text-sm font-semibold ${category === item ? "bg-[#d8ff72] text-[#0b252a]" : "border border-[#36565e]"}`}>{item}</button>
+                <button key={item} onClick={() => setCategory(item)} className={`arcade-filter ${category === item ? "is-selected" : ""}`}>{item}</button>
               ))}
             </div>
-            <p className="mt-6 text-sm text-[#94b0ac]">{filteredQuestions.length} questions</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <p className="bank-count mt-6">{String(filteredQuestions.length).padStart(3, "0")} CHALLENGES AVAILABLE</p>
+            <div className="challenge-grid mt-4 grid gap-4 sm:grid-cols-2">
               {filteredQuestions.map((item) => (
-                <button key={item.id} onClick={() => selectQuestion(item.number - 1)} className="rounded-2xl border border-[#294950] bg-[#102b31] p-5 text-left text-base leading-relaxed transition hover:-translate-y-0.5 hover:border-[#d8ff72]">
-                  <span className="mr-2 text-sm font-bold text-[#d8ff72]">{item.number}.</span>{item.prompt}
+                <button key={item.id} onClick={() => selectQuestion(item.number - 1)} className="challenge-select-card text-left">
+                  <span className="challenge-number">STAGE {String(item.number).padStart(3, "0")}</span>
+                  <span className="challenge-category">{item.category}</span>
+                  <span className="challenge-question">{item.prompt}</span>
+                  <span className="challenge-cta" aria-hidden="true">PRESS START →</span>
                 </button>
               ))}
             </div>
@@ -254,23 +262,28 @@ export default function Home() {
         )}
 
         {view === "history" && (
-          <section className="py-10 sm:py-14">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8eaca7]">Run history</p>
-            <h2 className="mt-2 text-4xl font-semibold">The reps, with the time intact.</h2>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <section className="arcade-screen py-10 sm:py-14">
+            <div className="screen-heading">
+              <p className="arcade-kicker text-[#ff4fd8]">PLAYER RECORD</p>
+              <h2>RUN ARCHIVE</h2>
+              <p>Every answer stays on the board with its full elapsed time.</p>
+            </div>
+            <div className="score-grid mt-8 grid gap-4 sm:grid-cols-3">
               <Metric label="Attempts" value={String(attempts.length)} />
               <Metric label="Average elapsed" value={formatTime(averageSeconds)} />
               <Metric label="Over target" value={String(attempts.filter((attempt) => attempt.completion_status === "timed_out").length)} />
             </div>
-            <div className="mt-6 overflow-hidden rounded-3xl border border-[#294950] bg-[#102b31]">
-              {attempts.length === 0 ? <p className="p-8 text-[#9bb5b1]">Finish a timed answer and it will appear here.</p> : attempts.slice(0, 20).map((attempt) => (
-                <div key={attempt.id} className="grid gap-3 border-b border-[#294950] p-5 last:border-b-0 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+            <div className="score-table mt-7">
+              <div className="score-table-header" aria-hidden="true"><span>CHALLENGE</span><span>TIME</span><span>RESULT</span></div>
+              {attempts.length === 0 ? <p className="empty-score">NO RUNS YET // CLEAR A STAGE TO POST A SCORE</p> : attempts.slice(0, 20).map((attempt, index) => (
+                <div key={attempt.id} className="score-row">
                   <div>
-                    <p className="font-semibold">{attempt.question_prompt}</p>
-                    <p className="mt-1 text-sm text-[#91ada8]">{attempt.category} · {new Date(attempt.started_at).toLocaleDateString()}</p>
+                    <p className="score-rank">#{String(index + 1).padStart(2, "0")} / {attempt.category}</p>
+                    <p className="score-question">{attempt.question_prompt}</p>
+                    <p className="score-date">{new Date(attempt.started_at).toLocaleDateString()}</p>
                   </div>
-                  <p className="font-mono text-lg font-semibold tabular-nums">{formatTime(attempt.time_elapsed_seconds)}</p>
-                  <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${attempt.completion_status === "timed_out" ? "bg-[#e9774e]/20 text-[#ffae91]" : attempt.completion_status === "abandoned" ? "bg-white/10 text-[#b8c8c5]" : "bg-[#d8ff72]/15 text-[#d8ff72]"}`}>{attempt.completion_status.replace("_", " ")}</span>
+                  <p className="score-time">{formatTime(attempt.time_elapsed_seconds)}</p>
+                  <span className={`score-status is-${attempt.completion_status}`}>{attempt.completion_status.replace("_", " ")}</span>
                 </div>
               ))}
             </div>
@@ -282,7 +295,7 @@ export default function Home() {
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-3xl border border-[#294950] bg-[#102b31] p-6"><p className="text-sm text-[#9bb5b1]">{label}</p><p className="mt-2 text-3xl font-semibold text-[#d8ff72]">{value}</p></div>;
+  return <div className="score-card"><p>{label}</p><strong>{value}</strong></div>;
 }
 
 const SEGMENTS: Record<string, string[]> = {

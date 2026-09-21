@@ -7,7 +7,7 @@ export type Attempt = {
   category: string;
   started_at: string;
   ended_at: string;
-  time_limit_seconds: 120 | 300 | 600;
+  time_limit_seconds: 120 | 300 | 600 | 1200 | 1800;
   time_elapsed_seconds: number;
   completion_status: CompletionStatus;
 };
