@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -7,21 +7,22 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const arcadeDisplay = Press_Start_2P({
+  variable: "--font-arcade",
+  weight: "400",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "PM Interview Prep Studio",
-  description: "Timed PM interview practice with a stopwatch that preserves every second.",
+  description: "Timed PM interview preparation with a stopwatch that preserves every second.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${arcadeDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

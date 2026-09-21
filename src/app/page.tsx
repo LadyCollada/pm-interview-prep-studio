@@ -136,86 +136,102 @@ export default function Home() {
     : 0;
 
   return (
-    <main className="min-h-screen bg-[#07191e] text-[#f1f8f4]">
-      <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-9">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#244149] pb-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#8aaba6]">PM Interview Prep Studio</p>
-            <h1 className="mt-1 text-xl font-semibold">Build the answer. Build the instinct.</h1>
+    <main className="arcade-shell min-h-screen text-[#f7f7ff]">
+      <div className="relative z-10 mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-8">
+        <header className="cabinet-header flex flex-wrap items-center justify-between gap-5 pb-5">
+          <div className="brand-lockup">
+            <p className="arcade-kicker">PM INTERVIEW PREP</p>
+            <h1 className="arcade-logo">STUDIO</h1>
+            <p className="mt-2 text-sm text-[#aeb2c8]">Build the answer. Build the instinct.</p>
           </div>
-          <nav className="flex gap-2" aria-label="Studio navigation">
+          <nav className="arcade-nav flex flex-wrap gap-2" aria-label="Studio navigation">
             {(["practice", "bank", "history"] as View[]).map((item) => (
               <button
                 key={item}
                 onClick={() => setView(item)}
                 disabled={phase === "running" && item !== "practice"}
-                className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition disabled:cursor-not-allowed disabled:opacity-35 ${view === item ? "bg-[#d8ff72] text-[#0b252a]" : "border border-[#36565e] hover:border-[#79969c]"}`}
+                className={`arcade-tab ${view === item ? "is-active" : ""}`}
               >
-                {item === "history" ? `History · ${attempts.length}` : item}
+                {item === "practice" ? "PLAY" : item === "bank" ? "SELECT" : `SCORES ${attempts.length}`}
               </button>
             ))}
           </nav>
         </header>
 
         {view === "practice" && (
-          <section className="mx-auto max-w-4xl py-10 sm:py-16">
-            <div className={`overflow-hidden rounded-[2rem] bg-[#f4f8f1] text-[#102e33] shadow-[0_32px_90px_rgba(0,0,0,0.32)] ${isOverTarget && phase === "running" ? "ring-4 ring-[#e9774e]/25" : ""}`}>
-              <div className="h-2 bg-[#d9e2dc]" aria-label={`${Math.round(progress)} percent of target time elapsed`}>
-                <div className={`h-full transition-[width,background-color] duration-300 ${isOverTarget ? "bg-[#e9774e]" : "bg-[#7c50ff]"}`} style={{ width: `${progress}%` }} />
+          <section className="mx-auto max-w-5xl py-8 sm:py-12">
+            <div className="status-strip" aria-hidden="true">
+              <span>PLAYER 1</span><span>CHALLENGE {String(question.number).padStart(3, "0")}</span><span>HI-SCORE {String(attempts.length).padStart(5, "0")}</span>
+            </div>
+            <div key={question.id} className={`stage-card ${isOverTarget && phase === "running" ? "is-overtime" : ""}`}>
+              <div className="crt-scanlines" aria-hidden="true" />
+              <div className="charge-shell">
+                <div className="charge-labels"><span>TIME CHARGE</span><span>{Math.round(progress)}%</span></div>
+                <div className="charge-meter" role="progressbar" aria-label="Target time elapsed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+                  <div className={`charge-fill ${isOverTarget ? "is-maxed" : ""}`} style={{ width: `${progress}%` }} />
+                </div>
               </div>
-              <div className="p-7 sm:p-12">
-                <div className="flex items-start justify-between gap-6">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5e7774]">{question.category} · prompt {question.number}</p>
+              <div className="relative p-6 sm:p-10 lg:p-12">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div>
+                    <p className="arcade-kicker text-[#31f7ff]">{question.category} / STAGE {String(question.number).padStart(2, "0")}</p>
+                    {phase === "ready" && <p className="ready-prompt mt-4">READY?</p>}
+                  </div>
                   {phase === "running" && (
-                    <div className="text-right">
-                      <p className={`font-mono text-3xl font-semibold tabular-nums sm:text-4xl ${isOverTarget ? "text-[#c54f2c]" : "text-[#173f45]"}`}>{formatTime(elapsed)}</p>
-                      <p className={`mt-1 text-xs font-bold ${isOverTarget ? "text-[#c54f2c]" : "text-[#718783]"}`}>
-                        {isOverTarget ? `${formatTime(elapsed - limit)} over target` : `${formatTime(limit)} target`}
+                    <div className={`timer-console ${isOverTarget ? "is-overtime" : ""}`}>
+                      <p className="timer-label">{isOverTarget ? "OVERTIME" : "ELAPSED"}</p>
+                      <SegmentedTimer seconds={elapsed} />
+                      <p className="timer-target">
+                        {isOverTarget ? `+${formatTime(elapsed - limit)} PAST TARGET` : `TARGET ${formatTime(limit)}`}
                       </p>
                     </div>
                   )}
                 </div>
-                <h2 className="mt-7 max-w-3xl text-3xl font-semibold leading-tight sm:text-5xl">{question.prompt}</h2>
+                <h2 className="challenge-copy mt-7 max-w-4xl text-3xl font-bold leading-[1.12] sm:text-5xl">{question.prompt}</h2>
 
                 {phase === "ready" && (
-                  <div className="mt-10 border-t border-[#cbd8d1] pt-7">
-                    <p className="text-sm font-bold">Set a target time</p>
-                    <p className="mt-1 text-sm text-[#647a77]">The stopwatch keeps running after the target.</p>
+                  <div className="control-deck mt-10 pt-7">
+                    <p className="arcade-kicker text-[#ff4fd8]">SELECT TARGET</p>
+                    <p className="mt-3 text-sm text-[#bec2d5]">The stopwatch keeps running after the target—no hard cutoff.</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {LIMITS.map((seconds) => (
-                        <button key={seconds} onClick={() => setLimit(seconds)} className={`rounded-xl px-5 py-3 text-sm font-bold transition ${limit === seconds ? "bg-[#173f45] text-white" : "border border-[#8da29d] hover:border-[#173f45]"}`}>
-                          {seconds / 60} min
+                        <button key={seconds} onClick={() => setLimit(seconds)} className={`target-chip ${limit === seconds ? "is-selected" : ""}`}>
+                          {seconds / 60}:00
                         </button>
                       ))}
                     </div>
                     <div className="mt-7 flex flex-wrap gap-3">
-                      <button onClick={start} className="rounded-xl bg-[#7c50ff] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#7c50ff]/20 transition hover:-translate-y-0.5">Start stopwatch</button>
-                      <button onClick={nextQuestion} className="rounded-xl border border-[#8da29d] px-5 py-3 text-sm font-bold hover:border-[#173f45]">Another question</button>
+                      <button onClick={start} className="arcade-button arcade-button-primary">INSERT COIN / START</button>
+                      <button onClick={nextQuestion} className="arcade-button arcade-button-ghost">CHANGE CHALLENGE</button>
                     </div>
                   </div>
                 )}
 
                 {phase === "running" && (
-                  <div className="mt-10 flex flex-wrap gap-3 border-t border-[#cbd8d1] pt-7">
-                    <button onClick={() => finish("done")} className="rounded-xl bg-[#173f45] px-6 py-3 text-sm font-bold text-white">I’m done</button>
-                    <button onClick={() => finish("abandoned")} className="rounded-xl px-5 py-3 text-sm font-bold text-[#7a5144] hover:bg-[#f3e7e1]">Abandon attempt</button>
+                  <div className="control-deck mt-10 flex flex-wrap gap-3 pt-7">
+                    <button onClick={() => finish("done")} className="arcade-button arcade-button-primary">LOCK IN ANSWER</button>
+                    <button onClick={() => finish("abandoned")} className="arcade-button arcade-button-ghost">EXIT STAGE</button>
                   </div>
                 )}
 
                 {phase === "result" && lastAttempt && (
-                  <div className="mt-10 border-t border-[#cbd8d1] pt-7">
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#627a76]">Attempt logged · {lastAttempt.completion_status.replace("_", " ")}</p>
-                    <p className="mt-2 text-3xl font-semibold">{formatTime(lastAttempt.time_elapsed_seconds)}</p>
-                    <p className="mt-1 text-sm text-[#647a77]">Target: {formatTime(lastAttempt.time_limit_seconds)} · Elapsed time preserved in full</p>
+                  <div className="result-panel mt-10 pt-8">
+                    <p className="result-banner">{lastAttempt.completion_status === "completed" ? "STAGE CLEAR" : lastAttempt.completion_status === "timed_out" ? "BONUS TIME" : "STAGE EXITED"}</p>
+                    <div className="result-grid mt-7">
+                      <div><span>FINAL TIME</span><strong>{formatTime(lastAttempt.time_elapsed_seconds)}</strong></div>
+                      <div><span>TARGET</span><strong>{formatTime(lastAttempt.time_limit_seconds)}</strong></div>
+                      <div><span>STATUS</span><strong>{lastAttempt.completion_status.replace("_", " ")}</strong></div>
+                    </div>
+                    <p className="mt-5 text-sm text-[#bec2d5]">Full elapsed time saved. Your run stays intact—even after the target.</p>
                     <div className="mt-6 flex flex-wrap gap-3">
-                      <button onClick={nextQuestion} className="rounded-xl bg-[#7c50ff] px-6 py-3 text-sm font-bold text-white">Next question</button>
-                      <button onClick={() => selectQuestion(questionIndex)} className="rounded-xl border border-[#8da29d] px-5 py-3 text-sm font-bold">Redo this question</button>
+                      <button onClick={nextQuestion} className="arcade-button arcade-button-primary">NEXT STAGE</button>
+                      <button onClick={() => selectQuestion(questionIndex)} className="arcade-button arcade-button-ghost">RETRY</button>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-            <p className="mt-5 text-center text-sm text-[#8eaca7]">Answer out loud. The target guides you; it does not cut you off.</p>
+            <p className="insert-coin mt-6 text-center">ANSWER OUT LOUD // TARGET GUIDES, NEVER CUTS OFF</p>
           </section>
         )}
 
@@ -239,7 +255,7 @@ export default function Home() {
 
         {view === "history" && (
           <section className="py-10 sm:py-14">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8eaca7]">Practice history</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8eaca7]">Run history</p>
             <h2 className="mt-2 text-4xl font-semibold">The reps, with the time intact.</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <Metric label="Attempts" value={String(attempts.length)} />
@@ -267,4 +283,32 @@ export default function Home() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return <div className="rounded-3xl border border-[#294950] bg-[#102b31] p-6"><p className="text-sm text-[#9bb5b1]">{label}</p><p className="mt-2 text-3xl font-semibold text-[#d8ff72]">{value}</p></div>;
+}
+
+const SEGMENTS: Record<string, string[]> = {
+  "0": ["a", "b", "c", "d", "e", "f"],
+  "1": ["b", "c"],
+  "2": ["a", "b", "g", "e", "d"],
+  "3": ["a", "b", "c", "d", "g"],
+  "4": ["f", "g", "b", "c"],
+  "5": ["a", "f", "g", "c", "d"],
+  "6": ["a", "f", "g", "e", "c", "d"],
+  "7": ["a", "b", "c"],
+  "8": ["a", "b", "c", "d", "e", "f", "g"],
+  "9": ["a", "b", "c", "d", "f", "g"],
+};
+
+function SegmentedTimer({ seconds }: { seconds: number }) {
+  const value = formatTime(seconds).padStart(5, "0");
+  return (
+    <div className="segment-display" role="timer" aria-label={`${value} elapsed`}>
+      {value.split("").map((character, index) => character === ":" ? (
+        <span className="segment-colon" aria-hidden="true" key={`colon-${index}`}><i /><i /></span>
+      ) : (
+        <span className="segment-digit" aria-hidden="true" key={`${character}-${index}`}>
+          {["a", "b", "c", "d", "e", "f", "g"].map((segment) => <i key={segment} className={`${segment} ${SEGMENTS[character]?.includes(segment) ? "on" : ""}`} />)}
+        </span>
+      ))}
+    </div>
+  );
 }
