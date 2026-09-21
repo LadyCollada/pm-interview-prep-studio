@@ -206,7 +206,7 @@ export default function Home() {
                       ))}
                     </div>
                     <div className="mt-7 flex flex-wrap gap-3">
-                      <button onClick={start} className="arcade-button arcade-button-primary">INSERT COIN / START</button>
+                      <button onClick={start} className="arcade-button arcade-button-primary">INSERT COIN TO START</button>
                       <button onClick={nextQuestion} className="arcade-button arcade-button-ghost">CHANGE CHALLENGE</button>
                     </div>
                   </div>
