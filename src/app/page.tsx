@@ -12,11 +12,12 @@ import {
   type Attempt,
   type CompletionStatus,
 } from "@/lib/attempts";
+import { deriveDailyStats } from "@/lib/stats";
 
 const LIMITS = [120, 300, 600, 1200, 1800] as const;
 const CATEGORIES = ["All", "Design", "Improvement", "Metrics", "Execution", "Leadership", "Strategy"] as const;
 type Limit = (typeof LIMITS)[number];
-type View = "practice" | "bank" | "history";
+type View = "practice" | "bank" | "today" | "history";
 type Phase = "ready" | "running" | "result";
 
 function formatTime(totalSeconds: number) {
@@ -44,6 +45,7 @@ export default function Home() {
     () => category === "All" ? questions : questions.filter((item) => item.category === category),
     [category],
   );
+  const todayStats = useMemo(() => deriveDailyStats(attempts), [attempts]);
 
   useEffect(() => {
     const storedAttempts = readAttempts();
@@ -134,6 +136,9 @@ export default function Home() {
   const averageSeconds = attempts.length
     ? Math.round(attempts.reduce((total, attempt) => total + attempt.time_elapsed_seconds, 0) / attempts.length)
     : 0;
+  const statusLabel = (status: CompletionStatus) => status === "abandoned"
+    ? "ball drained"
+    : status === "timed_out" ? "bonus time" : "stage clear";
 
   return (
     <main className="arcade-shell min-h-screen text-[#f7f7ff]">
@@ -145,14 +150,14 @@ export default function Home() {
             <p className="mt-2 text-sm text-[#aeb2c8]">Build the answer. Build the instinct.</p>
           </div>
           <nav className="arcade-nav flex flex-wrap gap-2" aria-label="Studio navigation">
-            {(["practice", "bank", "history"] as View[]).map((item) => (
+            {(["practice", "bank", "today", "history"] as View[]).map((item) => (
               <button
                 key={item}
                 onClick={() => setView(item)}
                 disabled={phase === "running" && item !== "practice"}
                 className={`arcade-tab ${view === item ? "is-active" : ""}`}
               >
-                {item === "practice" ? "PLAY" : item === "bank" ? "SELECT" : `SCORES ${attempts.length}`}
+                {item === "practice" ? "PLAY" : item === "bank" ? "SELECT" : item === "today" ? "TODAY" : `SCORES ${attempts.length}`}
               </button>
             ))}
           </nav>
@@ -216,22 +221,58 @@ export default function Home() {
 
                 {phase === "result" && lastAttempt && (
                   <div className="result-panel mt-10 pt-8">
-                    <p className="result-banner">{lastAttempt.completion_status === "completed" ? "STAGE CLEAR" : lastAttempt.completion_status === "timed_out" ? "BONUS TIME" : "STAGE EXITED"}</p>
+                    <p className={`result-banner ${lastAttempt.completion_status === "abandoned" ? "is-extra-ball" : ""}`}>{statusLabel(lastAttempt.completion_status)}</p>
                     <div className="result-grid mt-7">
                       <div><span>FINAL TIME</span><strong>{formatTime(lastAttempt.time_elapsed_seconds)}</strong></div>
                       <div><span>TARGET</span><strong>{formatTime(lastAttempt.time_limit_seconds)}</strong></div>
-                      <div><span>STATUS</span><strong>{lastAttempt.completion_status.replace("_", " ")}</strong></div>
+                      <div><span>STATUS</span><strong>{statusLabel(lastAttempt.completion_status)}</strong></div>
                     </div>
-                    <p className="mt-5 text-sm text-[#bec2d5]">Full elapsed time saved. Your run stays intact—even after the target.</p>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      <button onClick={nextQuestion} className="arcade-button arcade-button-primary">NEXT STAGE</button>
-                      <button onClick={() => selectQuestion(questionIndex)} className="arcade-button arcade-button-ghost">RETRY</button>
-                    </div>
+                    {lastAttempt.completion_status === "abandoned" ? (
+                      <div className="extra-ball-panel mt-6">
+                        <p className="extra-ball-title">EXTRA BALL READY</p>
+                        <p>Ball drained. That’s part of the game. Take the same shot again whenever you’re ready.</p>
+                        <div className="mt-6 flex flex-wrap gap-3">
+                          <button onClick={start} className="arcade-button arcade-button-primary">ONE MORE SHOT</button>
+                          <button onClick={nextQuestion} className="arcade-button arcade-button-ghost">CHANGE CHALLENGE</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="mt-5 text-sm text-[#bec2d5]">Full elapsed time saved. Your run stays intact—even after the target.</p>
+                        <div className="mt-6 flex flex-wrap gap-3">
+                          <button onClick={nextQuestion} className="arcade-button arcade-button-primary">NEXT STAGE</button>
+                          <button onClick={() => selectQuestion(questionIndex)} className="arcade-button arcade-button-ghost">RETRY</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
             </div>
             <p className="insert-coin mt-6 text-center">ANSWER OUT LOUD // TARGET GUIDES, NEVER CUTS OFF</p>
+          </section>
+        )}
+
+        {view === "today" && (
+          <section className="arcade-screen py-10 sm:py-14">
+            <div className="screen-heading">
+              <p className="arcade-kicker text-[#ff4fd8]">POST-GAME SCORE</p>
+              <h2>TODAY’S GAME</h2>
+              <p>Every shot counts—clears, bonus time, and ball drains all stay on the board.</p>
+            </div>
+            <div className="today-marquee mt-8">
+              <span>PLAYER 1</span><span>{todayStats.date}</span><span>TABLE OPEN</span>
+            </div>
+            <div className="daily-stat-grid">
+              <DailyStat label="BALLS PLAYED" value={String(todayStats.questions_attempted).padStart(2, "0")} description="questions attempted" />
+              <DailyStat label="STAGES CLEARED" value={String(todayStats.questions_completed).padStart(2, "0")} description="completed, including bonus time" />
+              <DailyStat label="TIME ON TABLE" value={formatTime(todayStats.total_time_seconds).padStart(5, "0")} description="full elapsed time" />
+              <DailyStat label="CLEAR RATIO" value={`${todayStats.questions_completed}/${todayStats.questions_attempted}`} description="clears per attempt" />
+            </div>
+            <div className="game-note mt-7">
+              <p>KEEP THE BALL MOVING</p>
+              <span>No judgment, no red marks. A drained ball simply earns another shot.</span>
+            </div>
           </section>
         )}
 
@@ -283,7 +324,7 @@ export default function Home() {
                     <p className="score-date">{new Date(attempt.started_at).toLocaleDateString()}</p>
                   </div>
                   <p className="score-time">{formatTime(attempt.time_elapsed_seconds)}</p>
-                  <span className={`score-status is-${attempt.completion_status}`}>{attempt.completion_status.replace("_", " ")}</span>
+                  <span className={`score-status is-${attempt.completion_status}`}>{statusLabel(attempt.completion_status)}</span>
                 </div>
               ))}
             </div>
@@ -296,6 +337,16 @@ export default function Home() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return <div className="score-card"><p>{label}</p><strong>{value}</strong></div>;
+}
+
+function DailyStat({ label, value, description }: { label: string; value: string; description: string }) {
+  return (
+    <div className="daily-stat-card">
+      <p>{label}</p>
+      <SegmentedValue value={value} label={`${label}: ${value}`} />
+      <span>{description}</span>
+    </div>
+  );
 }
 
 const SEGMENTS: Record<string, string[]> = {
@@ -313,15 +364,21 @@ const SEGMENTS: Record<string, string[]> = {
 
 function SegmentedTimer({ seconds }: { seconds: number }) {
   const value = formatTime(seconds).padStart(5, "0");
+  return <SegmentedValue value={value} label={`${value} elapsed`} role="timer" />;
+}
+
+function SegmentedValue({ value, label, role = "img" }: { value: string; label: string; role?: "img" | "timer" }) {
   return (
-    <div className="segment-display" role="timer" aria-label={`${value} elapsed`}>
-      {value.split("").map((character, index) => character === ":" ? (
-        <span className="segment-colon" aria-hidden="true" key={`colon-${index}`}><i /><i /></span>
-      ) : (
-        <span className="segment-digit" aria-hidden="true" key={`${character}-${index}`}>
-          {["a", "b", "c", "d", "e", "f", "g"].map((segment) => <i key={segment} className={`${segment} ${SEGMENTS[character]?.includes(segment) ? "on" : ""}`} />)}
-        </span>
-      ))}
+    <div className="segment-display" role={role} aria-label={label}>
+      {value.split("").map((character, index) => {
+        if (character === ":") return <span className="segment-colon" aria-hidden="true" key={`colon-${index}`}><i /><i /></span>;
+        if (character === "/") return <span className="segment-slash" aria-hidden="true" key={`slash-${index}`} />;
+        return (
+          <span className="segment-digit" aria-hidden="true" key={`${character}-${index}`}>
+            {["a", "b", "c", "d", "e", "f", "g"].map((segment) => <i key={segment} className={`${segment} ${SEGMENTS[character]?.includes(segment) ? "on" : ""}`} />)}
+          </span>
+        );
+      })}
     </div>
   );
 }
